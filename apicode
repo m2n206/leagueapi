@@ -1,0 +1,195 @@
+import requests
+import pygame
+import sys
+
+#api key
+api_key = "x"
+
+#used to get PUUID - once gotten carries across regions, never changes
+#because I am only searching myself, I just used my puuid to get my match ids
+#could write code so that could change which summoner
+#api_name = "https://na1.api.riotgames.com/lol/summoner/v4/summoners/by-name/m2n206"
+#api_url_name = api_name + '?api_key=' + api_key
+
+#gets 20 most recent match ids, lists them out
+api_match_ids = "https://americas.api.riotgames.com/lol/match/v5/matches/by-puuid/PvitJzqyi9lOE_ewyd8XwdQaskA1Y_0mfqEzPpnMDTdcfD8Qo70CE2lfJukFziC9UJyphzYv99MrmA/ids?start=0&count=20"
+api_url_match_ids = api_match_ids + '&api_key=' + api_key
+matchid = requests.get(api_url_match_ids)
+match_ids = matchid.json()
+
+#gets most recent game data
+api_recent = "https://americas.api.riotgames.com/lol/match/v5/matches/"
+api_url_recent = api_recent + match_ids[0] + '?api_key=' + api_key
+recent_match = requests.get(api_url_recent)
+match_data = recent_match.json()
+
+#finds where puuid is 
+participants = match_data['metadata']['participants']
+given_string = "PvitJzqyi9lOE_ewyd8XwdQaskA1Y_0mfqEzPpnMDTdcfD8Qo70CE2lfJukFziC9UJyphzYv99MrmA"
+index = participants.index(given_string)
+#print(index)
+
+
+#start to collect the data that I care about
+kills = match_data['info']['participants'][index]['kills']
+deaths = match_data['info']['participants'][index]['deaths']
+assists = match_data['info']['participants'][index]['assists']
+name = match_data['info']['participants'][index]['riotIdGameName']
+champion_real = match_data['info']['participants'][index]['championName']
+lane_real = match_data['info']['participants'][index]['individualPosition']
+wintf = match_data['info']['participants'][index]['win']
+damage_dealt = match_data['info']['participants'][index]['totalDamageDealtToChampions']
+if wintf == "true":
+    win = ("Victory")
+else:
+    win = ("Defeat")
+
+
+#fixes champion name into actual champion names (if applicable)
+if champion_real == "AurelionSol":
+    champion = ("Aurelion Sol")
+elif champion_real == "Belveth":
+    champion = ("Bel\'Veth")
+elif champion_real == "Chogath":
+    champion = ("Cho\'Gath")
+elif champion_real == "DrMundo":
+    champion = ("Dr. Mundo")
+elif champion_real == "FiddleSticks":
+    champion = ("Fiddlesticks")
+elif champion_real == "JarvanIV":
+    champion = ("Jarvan IV")
+elif champion_real == "Kaisa":
+    champion = ("Kai\'sa")
+elif champion_real == "Khazix":
+    champion = ("Kha\'Zix")
+elif champion_real == "KogMaw":
+    champion = ("Kog\'Maw")
+elif champion_real == "KSante":
+    champion = ("K\'Sante")
+elif champion_real == "Leblanc":
+    champion = ("LeBlanc")
+elif champion_real == "LeeSin":
+    champion = ("Lee Sin")
+elif champion_real == "MasterYi":
+    champion = ("Master Yi")
+elif champion_real == "MissFortune":
+    champion = ("Miss Fortune")
+elif champion_real == "MonkeyKing":
+    champion = ("Wukong")
+elif champion_real == "Nunu":
+    champion = ("Nunu & Willump")
+elif champion_real == "RekSai":
+    champion = ("Rek\'Sai")
+elif champion_real == "TahmKench":
+    champion = ("Tahm Kench")
+elif champion_real == "TwistedFate":
+    champion = ("Twisted Fate")
+elif champion_real == "Velkoz":
+    champion = ("Vel\'Koz")
+elif champion_real == "XinZhao":
+    champion = ("Xin Zhao")
+else:
+    champion = (champion_real)
+    
+if lane_real == "TOP":
+    lane = ("Top")
+elif lane_real == "JUNGLE":
+    lane = ("Jungle")
+elif lane_real == "MIDDLE":
+    lane = ("Middle")
+elif lane_real == "BOTTOM":
+    lane = ("ADC")
+elif lane_real == "UTILITY":
+    lane = ("Support")
+
+# Initialize Pygame
+pygame.init()
+
+# Set display resolution
+screen_width = 1024  # Change this to your screen's width
+screen_height = 600  # Change this to your screen's height
+
+screen = pygame.display.set_mode((screen_width, screen_height), pygame.FULLSCREEN)
+
+#setup colors and fonts
+white = (255, 255, 255)
+black = (0, 0, 0)
+font_path = "/usr/share/fonts/truetype/msttcorefonts/verdana.ttf"
+font_name = pygame.font.Font(font_path, 48)
+
+#actual texts and images
+summoner_name = font_name.render(name, True, white)
+champion_played = font_name.render(champion, True, white)
+kda = font_name.render(f"{kills}/{deaths}/{assists}", True, white)
+winloss = font_name.render(win, True, white)
+lane_played = font_name.render(lane, True, white)
+damage = font_name.render(f"{damage_dealt}", True, white)
+loading_path = f"/home/pi/Desktop/images/loading/{champion_real}_0.jpg"
+icon_path = "/home/pi/Desktop/images/icon.jpg"
+lane_path = f"/home/pi/Desktop/images/lane_icon/{lane_real}.jpg"
+
+running = True
+
+#sets up the screen and displays
+while running:
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            running = False
+        elif event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+            running = False
+            
+            
+    screen.fill(black)
+    
+    summoner_rect = summoner_name.get_rect()
+    summoner_rect.center = (677, 100)
+    screen.blit(summoner_name, summoner_rect)
+    
+    winloss_rect = winloss.get_rect()
+    winloss_rect.center = (677, 225)
+    screen.blit(winloss, winloss_rect)
+    
+    champion_rect = champion_played.get_rect()
+    champion_rect.center = (503.5, 350)
+    screen.blit(champion_played, champion_rect)
+
+    lane_rect = lane_played.get_rect()
+    lane_rect.center = (914.5, 350)
+    screen.blit(lane_played, lane_rect)
+
+    kda_rect = kda.get_rect()
+    kda_rect.center = (503.5, 475)
+    screen.blit(kda, kda_rect)
+    
+    damage_rect = damage.get_rect()
+    damage_rect.center = (850.5, 475)
+    screen.blit(damage, damage_rect)
+    
+    #Loading screen splash
+    try:
+        loading_image = pygame.image.load(loading_path)
+    except pygame.error as e:
+        print("Unable to load image", e)
+    #tile_width, tile_height = tile_image.get_size()
+    loading_image_size = pygame.transform.scale(loading_image, (330, 600))
+    screen.blit(loading_image_size, (0, 0))
+
+    try:
+        lane_image = pygame.image.load(lane_path)
+    except pygame.error as e:
+        print("Unable to load image", e)
+    #tile_width, tile_height = tile_image.get_size()
+    lane_image_size = pygame.transform.scale(lane_image, (64, 64))
+    lane_rect = lane_image_size.get_rect()
+    lane_rect.center = (786.5, 350)
+    screen.blit(lane_image_size, lane_rect)
+
+    pygame.display.flip()
+
+# Quit Pygame
+pygame.quit()
+
+# Exit the program
+sys.exit()
+
+   
